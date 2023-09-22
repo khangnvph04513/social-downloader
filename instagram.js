@@ -30,7 +30,7 @@ app.use('/downloads', express.static('downloads'));
 app.get('/downloadPost', async (req, res) => {
   var listVideo = []
   const urls = req.query.urls.split(',');
-  const data = await downloadFromURL(urls);
+  const data = await downloadInstagramImageFromURL(urls);
   return res.send({});
 });
 
@@ -47,9 +47,7 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-const getIdPostFromUrl = async (url) => {
-  return url.split('/')[4]
-}
+
 
 const downloadImageFromPost = async (url, postId) => {
   const folder = "downloads/"
@@ -72,7 +70,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const downloadFromURL = async (urls) => {
+const downloadInstagramImageFromURL = async (urls) => {
   const browser = await puppeteer.launch({ headless: false });
   try {
     for (let i = 0; i < urls.length; i++) {
