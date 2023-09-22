@@ -243,7 +243,7 @@ const downloadInstagramImageFromURL = async (urls) => {
       const page = await browser.newPage();
       // Điều hướng đến trang web
       await page.goto(url);
-      await page.waitFor(3000);
+      await page.waitForTimeout(3000);
       // Chờ cho đến khi trang web hoàn tất quá trình load (có thể thay đổi thời gian chờ)
       await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
 
