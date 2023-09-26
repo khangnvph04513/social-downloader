@@ -61,6 +61,19 @@ app.get('/instagram/downloadPost', async (req, res) => {
   const download = await downloadInstagramImageFromURL(urls);
   return res.send(download);
 });
+
+app.get('/instagram/downloadPostByUsername', async (req, res) => {
+  const username = req.query.username;
+  const download = await getPostUrlFromUsername(username);
+  console.log(download);
+  return res.send(download);
+});
+
+app.get('/instagram/downloadVideoPost', async (req, res) => {
+  const urls = req.query.urls.split(',');
+  const download = await downloadInstagramVideoFromURL(urls);
+  return res.send(download);
+});
 // ---------------------------- GET DOWNLOAD LINK ----------------------------------------
 app.get('/download-video/:videoId', (req, res) => {
   var videoId = req.params.videoId;
@@ -277,6 +290,99 @@ const getIdPostFromUrl = async (url) => {
 const downloadImageFromPost = async (url, postId) => {
   const folder = "downloads/"
   const fileName = `${postId}.jpg`
+  const downloadFile = fetch(url);
+  console.log(downloadFile);
+  const file = fs.createWriteStream(folder + fileName)
+
+  downloadFile.then(res => {
+    res.body.pipe(file)
+    file.on("finish", () => {
+      file.close()
+      resolve()
+    });
+    file.on("error", (err) => reject(err));
+  });
+}
+
+
+const getPostUrlFromUsername = async (username) => {
+  let downloadUrls = '';
+  let url = `https://www.instagram.com/${username}/`
+  const browser = await puppeteer.launch({ headless: false });
+  try {
+    console.log("START PUPPERTER");
+
+    const page = await browser.newPage();
+    // Điều hướng đến trang web
+    await page.goto(url);
+    await page.waitForTimeout(3000);
+    // Chờ cho đến khi trang web hoàn tất quá trình load (có thể thay đổi thời gian chờ)
+    await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
+
+    // Có thể thêm số lần cuộn xuống để tăng thêm số lượng ảnh download
+    await page.evaluate(() => {
+      window.scrollBy(0, 1000); // Cuộn xuống 1000 pixel
+    });
+    await page.waitForTimeout(3000);
+    // Lấy dữ liệu sau khi trang web đã load hoàn tất
+    const hrefValues = await page.$$eval('a.x1i10hfl.xjbqb8w.x6umtig.x1b1mbwd.xaqea5y.xav7gou.x9f619.x1ypdohk.xt0psk2.xe8uvvx.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x16tdsg8.x1hl2dhg.xggy1nq.x1a2a7pz._a6hd', (anchors) => {
+      return anchors.map((a) => a.getAttribute('href'));
+    });
+    hrefValues = hrefValues.filter((href) =>
+      href.indexOf('/p/') > -1
+    )
+    return hrefValues.map((href) => `https://www.instagram.com/${href}`)
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+  finally {
+    await browser.close();
+  }
+}
+
+const downloadInstagramVideoFromURL = async (urls) => {
+  let downloadUrls = '';
+  const browser = await puppeteer.launch({ headless: true });
+  try {
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      console.log("START PUPPERTER");
+
+      const page = await browser.newPage();
+      // Điều hướng đến trang web
+      await page.goto(url);
+      await page.waitForTimeout(3000);
+      // Chờ cho đến khi trang web hoàn tất quá trình load (có thể thay đổi thời gian chờ)
+      await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3');
+
+      // Lấy dữ liệu sau khi trang web đã load hoàn tất
+      const srcValue = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
+      console.log('srcValue', srcValue);
+
+      if (srcValue) {
+        const postId = await getIdPostFromUrl(url);
+        const downloadLink = baseDownloadVideoUrl.replace('{FILE_NAME}', postId);
+        console.log('downloadLink', downloadLink);
+        downloadUrls += `<a href="${downloadLink}">${downloadLink}<a/></br>`;;
+        await downloadVideoFromPost(srcValue, postId);
+      }
+    }
+    return downloadUrls;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+  finally {
+    await browser.close();
+  }
+
+}
+
+// Common thanh file chung di
+const downloadVideoFromPost = async (url, postId) => {
+  const folder = "downloads/"
+  const fileName = `${postId}.mp4`
   const downloadFile = fetch(url);
   console.log(downloadFile);
   const file = fs.createWriteStream(folder + fileName)
