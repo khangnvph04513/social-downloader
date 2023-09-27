@@ -9,6 +9,8 @@ const fs = require("fs");
 const { exit } = require("process");
 const { resolve } = require("path");
 const { reject } = require("lodash");
+require('dotenv').config();
+
 const { Headers } = require('node-fetch');
 const headers = new Headers();
 headers.append('User-Agent', 'TikTok 26.2.0 rv:262018 (iPhone; iOS 14.4.2; en_US) Cronet');
@@ -18,12 +20,12 @@ headersWm.append('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleW
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+console.log();
 // const baseDownloadUrl = `http://localhost:${port}/downloads/{FILE_NAME}.mp4`;
 
-// const baseDownloadVideoUrl = `http://13.228.77.36:${port}/download-video/{FILE_NAME}`;
-// const baseDownloadImageUrl = `http://13.228.77.36:${port}/download-image/{FILE_NAME}`;
-const baseDownloadVideoUrl = `http://localhost:${port}/download-video/{FILE_NAME}`;
-const baseDownloadImageUrl = `http://localhost:${port}/download-image/{FILE_NAME}`;
+const baseDownloadVideoUrl = process.env.VIDEO_DOWNLOAD_LINK
+const baseDownloadImageUrl = process.env.IMAGE_DOWNLOAD_LINK;
+const timeout = Number.parseInt(process.env.TIMEOUT)
 app.use('/downloads', express.static('downloads'));
 
 // ----------------------------------- TIKTOK -----------------------------
@@ -253,7 +255,7 @@ const downloadInstagramResourceFromURL = async (urls) => {
       await page.waitForTimeout(2000);
       
       try {
-        await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3', { timeout: 1000 });
+        await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3', { timeout: timeout });
         const videoSrc = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
         console.log('videoSrc', videoSrc);
         if (videoSrc) {
@@ -268,7 +270,7 @@ const downloadInstagramResourceFromURL = async (urls) => {
         console.log(error);
       }
       try {
-        await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', { timeout: 1000 });
+        await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', { timeout: timeout });
         const imgSrc = await page.$eval('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', (img) => img.getAttribute('src'));
         console.log('imgSrc', imgSrc);
         if (imgSrc) {
