@@ -250,10 +250,10 @@ const downloadInstagramResourceFromURL = async (urls) => {
 
       const page = await browser.newPage();
       await page.goto(url);
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(2000);
       
       try {
-        await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3');
+        await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3', { timeout: 1000 });
         const videoSrc = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
         console.log('videoSrc', videoSrc);
         if (videoSrc) {
@@ -268,7 +268,7 @@ const downloadInstagramResourceFromURL = async (urls) => {
         console.log(error);
       }
       try {
-        await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
+        await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', { timeout: 1000 });
         const imgSrc = await page.$eval('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', (img) => img.getAttribute('src'));
         console.log('imgSrc', imgSrc);
         if (imgSrc) {
