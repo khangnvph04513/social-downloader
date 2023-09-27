@@ -58,20 +58,14 @@ app.get('/tiktok/downloadVideoByUsername', async (req, res) => {
 app.get('/instagram/downloadPost', async (req, res) => {
   var listVideo = []
   const urls = req.query.urls.split(',');
-  const download = await downloadInstagramImageFromURL(urls);
+  const download = await downloadInstagramResourceFromURL(urls);
   return res.send(download);
 });
 
 app.get('/instagram/downloadPostByUsername', async (req, res) => {
   const username = req.query.username;
-  const download = await getPostUrlFromUsername(username);
+  const download = await downloadInstagramResourceFromURL(username);
   console.log(download);
-  return res.send(download);
-});
-
-app.get('/instagram/downloadVideoPost', async (req, res) => {
-  const urls = req.query.urls.split(',');
-  const download = await downloadInstagramVideoFromURL(urls);
   return res.send(download);
 });
 // ---------------------------- GET DOWNLOAD LINK ----------------------------------------
@@ -245,7 +239,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const downloadInstagramImageFromURL = async (urls) => {
+const downloadInstagramResourceFromURL = async (urls) => {
   let downloadUrls = '';
   const browser = await puppeteer.launch({ headless: true });
   try {
@@ -254,24 +248,45 @@ const downloadInstagramImageFromURL = async (urls) => {
       console.log("START PUPPERTER");
 
       const page = await browser.newPage();
-      // Điều hướng đến trang web
       await page.goto(url);
       await page.waitForTimeout(3000);
-      // Chờ cho đến khi trang web hoàn tất quá trình load (có thể thay đổi thời gian chờ)
       await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
 
-      // Lấy dữ liệu sau khi trang web đã load hoàn tất
-      const srcValue = await page.$eval('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', (img) => img.getAttribute('src'));
-      console.log('srcValue', srcValue);
 
-      if (srcValue) {
-        const postId = await getIdPostFromUrl(url);
-        const downloadLink = baseDownloadImageUrl.replace('{FILE_NAME}', postId);
-        console.log('downloadLink', downloadLink);
-        downloadUrls += `<a href="${downloadLink}">${downloadLink}<a/></br>`;;
-        await downloadImageFromPost(srcValue, postId);
+      try {
+
+        
+        
+        const videoSrc = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
+        console.log('videoSrc', videoSrc);
+        if (videoSrc) {
+          const postId = await getIdPostFromUrl(url);
+          const downloadLink = baseDownloadVideoUrl.replace('{FILE_NAME}', postId);
+          console.log('downloadLink', downloadLink);
+          downloadUrls += `<a href="${downloadLink}">${downloadLink}<a/></br>`;;
+          await downloadVideoFromPost(videoSrc, postId);
+          continue;
+        }
+        
+      } catch (error) {
+        console.log(error);
+      }
+      try {
+        const imgSrc = await page.$eval('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', (img) => img.getAttribute('src'));
+        console.log('imgSrc', imgSrc);
+        if (imgSrc) {
+          const postId = await getIdPostFromUrl(url);
+          const downloadLink = baseDownloadImageUrl.replace('{FILE_NAME}', postId);
+          console.log('downloadLink', downloadLink);
+          downloadUrls += `<a href="${downloadLink}">${downloadLink}<a/></br>`;;
+          await downloadImageFromPost(imgSrc, postId);
+          continue;
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
+    console.log('DONE');
     return downloadUrls;
   } catch (error) {
     console.log(error);
@@ -361,11 +376,7 @@ const downloadInstagramVideoFromURL = async (urls) => {
       console.log('srcValue', srcValue);
 
       if (srcValue) {
-        const postId = await getIdPostFromUrl(url);
-        const downloadLink = baseDownloadVideoUrl.replace('{FILE_NAME}', postId);
-        console.log('downloadLink', downloadLink);
-        downloadUrls += `<a href="${downloadLink}">${downloadLink}<a/></br>`;;
-        await downloadVideoFromPost(srcValue, postId);
+
       }
     }
     return downloadUrls;
