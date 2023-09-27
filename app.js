@@ -242,21 +242,18 @@ function sleep(ms) {
 const downloadInstagramResourceFromURL = async (urls) => {
   let downloadUrls = '';
   const browser = await puppeteer.launch({ headless: true });
+  console.log("START PUPPERTER");
   try {
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      console.log("START PUPPERTER");
+      
 
       const page = await browser.newPage();
       await page.goto(url);
       await page.waitForTimeout(3000);
-      await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
-
-
+      
       try {
-
-        
-        
+        await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3');
         const videoSrc = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
         console.log('videoSrc', videoSrc);
         if (videoSrc) {
@@ -267,11 +264,11 @@ const downloadInstagramResourceFromURL = async (urls) => {
           await downloadVideoFromPost(videoSrc, postId);
           continue;
         }
-        
       } catch (error) {
         console.log(error);
       }
       try {
+        await page.waitForSelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
         const imgSrc = await page.$eval('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3', (img) => img.getAttribute('src'));
         console.log('imgSrc', imgSrc);
         if (imgSrc) {
