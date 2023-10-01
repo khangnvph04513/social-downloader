@@ -66,10 +66,47 @@ app.get('/instagram/downloadPost', async (req, res) => {
 
 app.get('/instagram/downloadPostByUsername', async (req, res) => {
   const username = req.query.username;
-  const download = await downloadInstagramResourceFromURL(username);
+  const download = await getPostUrlFromUsername(username);
   console.log(download);
   return res.send(download);
 });
+
+
+// ------------------------- STREAMING LARGE FILE ---------------------------------------
+app.get('/stream-video', async (req, res) => {
+  
+  let videoUrl = req.query.videoUrl;
+  // Tính toán phần của video cần tải
+  const chunkSize = 10 * 1024 * 1024; // Kích thước phần (ở đây, 10 MB)
+  const part = Number(req.params.part);
+  const start = part * chunkSize;
+  const end = start + chunkSize - 1;
+
+  // Tạo yêu cầu Axios để tải xuống phần của video
+  const axiosConfig = {
+    url: videoUrl,
+    method: 'GET',
+    headers: {
+      Range: `bytes=${start}-${end}`,
+    },
+    responseType: 'stream', // Cấu hình Axios để trả về dữ liệu dưới dạng stream
+  };
+
+  try {
+    const response = await axios(axiosConfig);
+    const videoStream = response.data;
+    
+    // Đặt kiểu nội dung của phản hồi
+    //res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Disposition', `attachment; filename=test.mp4`);
+    // Trả về stream của video
+    videoStream.pipe(res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Lỗi khi truy xuất video.');
+  }
+});
+
 // ---------------------------- GET DOWNLOAD LINK ----------------------------------------
 app.get('/download-video/:videoId', (req, res) => {
   var videoId = req.params.videoId;
@@ -84,6 +121,15 @@ app.get('/download-image/:imageId', (req, res) => {
   const videoPath = path.join(__dirname, `downloads/${imageId}.${extension}`);
   res.setHeader('Content-Disposition', `attachment; filename=${imageId}.${extension}`);
   res.sendFile(videoPath);
+});
+
+
+
+// TEST 
+app.get('/test', async (req, res) => {
+  const username = req.query.username;
+  const download = await test();
+  return res.send(`download`);
 });
 
 app.listen(port, () => {
@@ -248,12 +294,12 @@ const downloadInstagramResourceFromURL = async (urls) => {
   try {
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      
+
 
       const page = await browser.newPage();
       await page.goto(url);
       await page.waitForTimeout(2000);
-      
+
       try {
         await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3', { timeout: timeout });
         const videoSrc = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
@@ -355,28 +401,22 @@ const getPostUrlFromUsername = async (username) => {
   }
 }
 
-const downloadInstagramVideoFromURL = async (urls) => {
+const test = async () => {
   let downloadUrls = '';
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: false });
   try {
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-      console.log("START PUPPERTER");
+    console.log("START PUPPERTER");
 
-      const page = await browser.newPage();
-      // Điều hướng đến trang web
-      await page.goto(url);
-      await page.waitForTimeout(3000);
-      // Chờ cho đến khi trang web hoàn tất quá trình load (có thể thay đổi thời gian chờ)
-      await page.waitForSelector('video.x1lliihq.x5yr21d.xh8yej3');
+    const page = await browser.newPage();
+    // Điều hướng đến trang web
+    await page.goto(`https://shopee.vn/greeneshop?categoryId=100630&entryPoint=ShopByPDP&itemId=4267187485&upstream=search`);
+    await page.waitForTimeout(1000);
+    await page.type('input[type="text"]', '(+84) 365087401', { delay: 100 });
+    await page.type('input[type="password"]', '123@123Aa', { delay: 100 });
+    await page.waitForTimeout(1000);
+    await page.click('button.wyhvVD._1EApiB.hq6WM5.L-VL8Q.cepDQ1._7w24N1');
+    for (let i = 0; i < 100; i++) {
 
-      // Lấy dữ liệu sau khi trang web đã load hoàn tất
-      const srcValue = await page.$eval('video.x1lliihq.x5yr21d.xh8yej3', (video) => video.getAttribute('src'));
-      console.log('srcValue', srcValue);
-
-      if (srcValue) {
-
-      }
     }
     return downloadUrls;
   } catch (error) {
